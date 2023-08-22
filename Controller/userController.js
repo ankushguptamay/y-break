@@ -73,7 +73,7 @@ exports.loginUser = async (req, res) => {
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid email or password!"
+                message: "Invalid mobile number or password!"
             });
         }
         const validPassword = await bcrypt.compare(
@@ -83,7 +83,7 @@ exports.loginUser = async (req, res) => {
         if (!validPassword) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid email or password!"
+                message: "Invalid mobile number or password!"
             });
         }
         const data = {
@@ -125,7 +125,7 @@ exports.changePassword = async (req, res) => {
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid email or password!"
+                message: "Invalid mobile number or password!"
             });
         }
         const validPassword = await bcrypt.compare(
@@ -135,7 +135,7 @@ exports.changePassword = async (req, res) => {
         if (!validPassword) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid email or password!"
+                message: "Invalid mobile number or password!"
             });
         }
         const salt = await bcrypt.genSalt(SALT);
@@ -220,7 +220,7 @@ exports.getUser = async (req, res) => {
         };
         res.status(200).json({
             success: true,
-            message: "User Profile Fetched successfully!",
+            message: "User Profile fetched successfully!",
             data: user
         });
     } catch (err) {
@@ -233,10 +233,10 @@ exports.getUser = async (req, res) => {
 
 exports.getAllUser = async (req, res) => {
     try {
-        const user = await Users.findAll();
+        const user = await Users.findAll({ attributes: { exclude: ['password'] } });
         res.status(200).json({
             success: true,
-            message: "All User Fetched successfully!",
+            message: "All User fetched successfully!",
             data: user
         });
     } catch (err) {
