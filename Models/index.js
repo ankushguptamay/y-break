@@ -33,6 +33,6 @@ db.cardsData.belongsTo(db.card, { foreignKey: "cardId", as: "cards", onDelete: "
 db.card.hasMany(db.step, { foreignKey: "cardId", as: "steps", onDelete: "CASCADE" });
 db.step.belongsTo(db.card, { foreignKey: "cardId", as: "cards", onDelete: "CASCADE" });
 
-queryInterface.changeColumn("cardsDatas", "overview", { type: DataTypes.TEXT }).then((res) => { console.log(res) }).catch((err) => { console.log(err) });
+// queryInterface.changeColumn("cardsDatas", "overview", { type: DataTypes.TEXT }).then((res) => { console.log(res) }).catch((err) => { console.log(err) });
 
 module.exports = db;
