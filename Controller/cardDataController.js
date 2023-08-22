@@ -6,7 +6,10 @@ exports.createCardData = async (req, res) => {
     try {
         const { error } = createCardData(req.body);
         if (error) {
-            return res.status(400).json(error.details[0].message);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
         }
         const { cardId, videoLink, overview, iconText } = req.body;
         await CardsData.create({

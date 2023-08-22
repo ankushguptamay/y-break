@@ -16,7 +16,10 @@ exports.createCard = async (req, res) => {
         const { error } = createCard(req.body);
         if (error) {
             deleteSingleFile(req.file.path);
-            return res.status(400).json(error.details[0].message);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
         }
         const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText } = req.body;
         await Cards.create({

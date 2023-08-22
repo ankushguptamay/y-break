@@ -12,7 +12,10 @@ exports.registerAdmin = async (req, res) => {
     try {
         const { error } = adminRegistration(req.body);
         if (error) {
-            return res.status(400).json(error.details[0].message);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
         }
         const isAdmin = await Admin.findOne({
             where: {
@@ -57,8 +60,10 @@ exports.loginAdmin = async (req, res) => {
     try {
         const { error } = adminLogin(req.body);
         if (error) {
-            // console.log(error);
-            return res.status(400).json(error.details[0].message);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
         }
         const admin = await Admin.findOne({
             where: {
@@ -107,8 +112,10 @@ exports.changePassword = async (req, res) => {
     try {
         const { error } = adminChangePassword(req.body);
         if (error) {
-            console.log(error);
-            return res.status(400).json(error.details[0].message);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
         }
         const admin = await Admin.findOne({
             where: {
