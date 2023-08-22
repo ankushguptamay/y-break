@@ -115,3 +115,57 @@ exports.deleteCard = async (req, res) => {
         });
     }
 }
+
+exports.updateCard = async (req, res) => {
+    try {
+        const { error } = createCard(req.body);
+        if (error) {
+            deleteSingleFile(req.file.path);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
+        }
+        const cards = await Cards.findOne({
+            where: {
+                id: req.params.id
+            }
+        });
+        if (!cards) {
+            return res.sendStatus(401);
+        }
+        const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText } = req.body;
+        let iconImage_OriginalName = cards.iconImage_OriginalName;
+        let iconImage_FileName = cards.iconImage_FileName;
+        let iconImage_Path = cards.iconImage_Path;
+        if (req.file) {
+            if (cards.iconImage_Path) {
+                deleteSingleFile(cards.iconImage_Path);
+            }
+            iconImage_OriginalName = req.file.originalname;
+            iconImage_FileName = req.file.filename;
+            iconImage_Path = req.file.path;
+        }
+        await cards.update({
+            ...cards,
+            titleEnglish: titleEnglish,
+            time: time,
+            titleHindi: titleHindi,
+            bgColor1: bgColor1,
+            bgColor2: bgColor2,
+            iconText: iconText,
+            iconImage_OriginalName: iconImage_OriginalName,
+            iconImage_FileName: iconImage_FileName,
+            iconImage_Path: iconImage_Path,
+        });
+        res.status(200).json({
+            success: true,
+            message: "Card upadted successfully!"
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+}

@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(1234)
         },
         overview:{
-            type:DataTypes.STRING(1234)
+            type:DataTypes.TEXT
         }
     })
     return CardsDatas;

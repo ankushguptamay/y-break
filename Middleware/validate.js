@@ -108,10 +108,28 @@ exports.createCardData = (data) => {
     return schema.validate(data);
 }
 
+exports.updateCardData = (data) => {
+    const schema = joi.object().keys({
+        videoLink: joi.string().required(),
+        overview: joi.string().required(),
+        iconText: joi.string().min(3).max(1000).required(),
+        cardId: joi.string().optional()
+    });
+    return schema.validate(data);
+}
+
 exports.createStep = (data) => {
     const schema = joi.object().keys({
         stepsArr: joi.array().required(),
         cardId: joi.string().required()
+    });
+    return schema.validate(data);
+}
+
+exports.updateStep = (data) => {
+    const schema = joi.object().keys({
+        stepsArr: joi.array().required(),
+        cardId: joi.string().optional()
     });
     return schema.validate(data);
 }
