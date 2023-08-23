@@ -72,9 +72,6 @@ exports.getCard = async (req, res) => {
             where: {
                 id: req.params.id
             },
-            order: [
-                ['createdAt', 'DESC']
-            ],
             include: [{
                 model: CardsData,
                 as: "cardsDatas",
