@@ -48,7 +48,11 @@ exports.createCard = async (req, res) => {
 
 exports.getAllCard = async (req, res) => {
     try {
-        const cards = await Cards.findAll();
+        const cards = await Cards.findAll({
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        });
         res.status(200).json({
             success: true,
             message: "Cards fetched successfully!",
@@ -68,13 +72,22 @@ exports.getCard = async (req, res) => {
             where: {
                 id: req.params.id
             },
+            order: [
+                ['createdAt', 'DESC']
+            ],
             include: [{
                 model: CardsData,
-                as: "cardsDatas"
+                as: "cardsDatas",
+                order: [
+                    ['createdAt', 'DESC']
+                ]
 
             }, {
                 model: Step,
-                as: "steps"
+                as: "steps",
+                order: [
+                    ['createdAt', 'DESC']
+                ]
             }]
         });
         res.status(200).json({

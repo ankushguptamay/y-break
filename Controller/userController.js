@@ -233,7 +233,12 @@ exports.getUser = async (req, res) => {
 
 exports.getAllUser = async (req, res) => {
     try {
-        const user = await Users.findAll({ attributes: { exclude: ['password'] } });
+        const user = await Users.findAll({
+            attributes: { exclude: ['password'] },
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        });
         res.status(200).json({
             success: true,
             message: "All User fetched successfully!",

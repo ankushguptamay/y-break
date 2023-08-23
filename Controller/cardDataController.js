@@ -33,7 +33,12 @@ exports.createCardData = async (req, res) => {
 exports.getCardData = async (req, res) => {
     try {
         const cardsData = await CardsData.findAll({
-            where: { cardId: req.params.cardId }
+            where: {
+                cardId: req.params.cardId
+            },
+            order: [
+                ['createdAt', 'DESC']
+            ]
         });
         res.status(200).json({
             success: true,

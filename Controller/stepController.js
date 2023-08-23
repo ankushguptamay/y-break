@@ -33,7 +33,10 @@ exports.getStep = async (req, res) => {
         const steps = await Steps.findAll({
             where: {
                 cardId: req.params.cardId
-            }
+            },
+            order: [
+                ['createdAt', 'DESC']
+            ]
         });
         res.status(200).json({
             success: true,
