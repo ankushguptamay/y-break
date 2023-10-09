@@ -1,15 +1,17 @@
 const db = require('../Models');
 const Users = db.user;
-const { userChangePassword, userLogin, userRegistration } = require("../Middleware/validate");
-const { JWT_SECRET_KEY_USER, JWT_VALIDITY } = process.env;
+const { otpVerification, userLogin, userRegistration } = require("../Middleware/validate");
+const { JWT_SECRET_KEY_USER, JWT_VALIDITY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_SERVICE_SID } = process.env;
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 const { Op } = require("sequelize");
 
-const SALT = 10;
+const twilio = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
+    lazyLoading: true
+});
 
 exports.registerUser = async (req, res) => {
     try {
+        // Body Validation
         const { error } = userRegistration(req.body);
         if (error) {
             return res.status(400).json({
@@ -17,9 +19,10 @@ exports.registerUser = async (req, res) => {
                 message: error.details[0].message
             });
         }
+        // Check Duplicacy
         const isUser = await Users.findOne({
             where: {
-                mobileNumber: req.body.mobileNumber,
+                mobileNumber: req.body.mobileNumber
             },
         });
         if (isUser) {
@@ -28,25 +31,25 @@ exports.registerUser = async (req, res) => {
                 message: "User already present!"
             });
         }
-        const salt = await bcrypt.genSalt(SALT);
-        const hashedPassword = await bcrypt.hash(req.body.password, salt);
-        const user = await Users.create({
-            ...req.body,
-            password: hashedPassword,
+        // Save in DataBase
+        await Users.create({
+            ...req.body
         });
-        const data = {
-            id: user.id,
-            mobileNumber: req.body.mobileNumber
-        }
-        const authToken = jwt.sign(
-            data,
-            JWT_SECRET_KEY_USER,
-            { expiresIn: JWT_VALIDITY } // five day
-        );
+        // Sending OTP to mobile number
+        const countryCode = "+91";
+        await twilio.verify.v2
+            .services(TWILIO_SERVICE_SID)
+            .verifications
+            .create({
+                to: `${countryCode}${req.body.mobileNumber}`,
+                channel: 'sms'
+            });
         res.status(200).json({
             success: true,
-            message: 'Register successfully!',
-            authToken: authToken
+            message: `Register successfully! OTP send to ${req.body.mobileNumber}!`,
+            data: {
+                mobileNumber: req.body.mobileNumber
+            }
         });
     } catch (err) {
         res.status(500).json({
@@ -58,6 +61,7 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
     try {
+        // Body Validation
         const { error } = userLogin(req.body);
         if (error) {
             return res.status(400).json({
@@ -65,6 +69,7 @@ exports.loginUser = async (req, res) => {
                 message: error.details[0].message
             });
         }
+        // find user in database
         const user = await Users.findOne({
             where: {
                 mobileNumber: req.body.mobileNumber,
@@ -73,32 +78,24 @@ exports.loginUser = async (req, res) => {
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid mobile number or password!"
+                message: "Invalid mobile number! Or No User Present with this credential!"
             });
         }
-        const validPassword = await bcrypt.compare(
-            req.body.password,
-            user.password
-        );
-        if (!validPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid mobile number or password!"
+        // Sending OTP to mobile number
+        const countryCode = "+91";
+        await twilio.verify.v2
+            .services(TWILIO_SERVICE_SID)
+            .verifications
+            .create({
+                to: `${countryCode}${req.body.mobileNumber}`,
+                channel: 'sms'
             });
-        }
-        const data = {
-            id: user.id,
-            mobileNumber: req.body.mobileNumber
-        }
-        const authToken = jwt.sign(
-            data,
-            JWT_SECRET_KEY_USER,
-            { expiresIn: JWT_VALIDITY } // five day
-        );
         res.status(200).json({
             success: true,
-            message: 'Login successfully!',
-            authToken: authToken
+            message: `OTP send to ${req.body.mobileNumber}!`,
+            data: {
+                mobileNumber: req.body.mobileNumber
+            }
         });
     } catch (err) {
         res.status(500).json({
@@ -108,63 +105,65 @@ exports.loginUser = async (req, res) => {
     }
 };
 
-exports.changePassword = async (req, res) => {
+exports.otpVerification = async (req, res) => {
     try {
-        const { error } = userChangePassword(req.body);
+        // Validate body
+        const { error } = otpVerification(req.body);
         if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
+            // console.log(error);
+            return res.status(400).send(error.details[0].message);
         }
+        const { mobileNumber, mobileOTP } = req.body;
+        const countryCode = "+91";
+        // Checking user present or not
         const user = await Users.findOne({
             where: {
-                mobileNumber: req.body.mobileNumber
-            },
+                mobileNumber: mobileNumber
+            }
         });
         if (!user) {
-            return res.status(400).json({
+            return res.status(400).send({
                 success: false,
-                message: "Invalid mobile number or password!"
+                message: "User is not found! First register your self!"
             });
         }
-        const validPassword = await bcrypt.compare(
-            req.body.oldPassword,
-            user.password
-        );
-        if (!validPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid mobile number or password!"
+        // verify OTP
+        const respond = await twilio.verify.v2
+            .services(TWILIO_SERVICE_SID)
+            .verificationChecks
+            .create({
+                to: `${countryCode}${mobileNumber}`,
+                code: mobileOTP
             });
+        if (respond.valid === true) {
+            // generating auth Token
+            const data = {
+                id: user.id,
+                mobileNumber: mobileNumber
+            }
+            const authToken = jwt.sign(
+                data,
+                JWT_SECRET_KEY_USER,
+                { expiresIn: JWT_VALIDITY } // five day
+            );
+            res.status(200).send({
+                success: true,
+                message: `OTP verified successfully!`,
+                authToken: authToken
+            });
+        } else {
+            res.status(400).send({
+                success: false,
+                message: 'Wrong OTP!'
+            })
         }
-        const salt = await bcrypt.genSalt(SALT);
-        const hashedPassword = await bcrypt.hash(req.body.newPassword, salt);
-        await user.update({
-            ...user,
-            password: hashedPassword,
-        });
-        const data = {
-            id: user.id,
-            mobileNumber: req.body.mobileNumber
-        }
-        const authToken = jwt.sign(
-            data,
-            JWT_SECRET_KEY_USER,
-            { expiresIn: JWT_VALIDITY } // five day
-        );
-        res.status(200).json({
-            success: true,
-            message: 'Password changed successfully!',
-            authToken: authToken
-        });
     } catch (err) {
-        res.status(500).json({
+        res.status(500).send({
             success: false,
             message: err.message
         });
     }
-};
+}
 
 exports.update = async (req, res) => {
     try {
@@ -181,14 +180,15 @@ exports.update = async (req, res) => {
                 message: "Your profile is not present! Are you register?.. "
             })
         };
-        const { name, age, city, country, gender } = req.body;
+        const { name, age, city, country, gender, email } = req.body;
         await user.update({
             ...user,
             name: name,
             city: city,
             country: country,
             gender: gender,
-            age: age
+            age: age,
+            email: email
         });
         res.status(200).json({
             success: true,
