@@ -130,7 +130,9 @@ exports.updateCard = async (req, res) => {
     try {
         const { error } = createCard(req.body);
         if (error) {
-            deleteSingleFile(req.file.path);
+            if (req.file) {
+                deleteSingleFile(req.file.path);
+            }
             return res.status(400).json({
                 success: false,
                 message: error.details[0].message
