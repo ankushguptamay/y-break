@@ -208,7 +208,7 @@ exports.registerUserPassword = async (req, res) => {
         });
         const data = {
             id: user.id,
-            mobileNumber: mobileNumber
+            mobileNumber: user.mobileNumber
         }
         const authToken = jwt.sign(
             data,
