@@ -1,18 +1,19 @@
 const db = require('../Models');
 const Users = db.user;
-const { otpVerification, userLogin, userRegistration } = require("../Middleware/validate");
+const { otpVerification, userLogin, userRegistrationOTP, userRegistrationPassword, userSignInPassword } = require("../Middleware/validate");
 const { JWT_SECRET_KEY_USER, JWT_VALIDITY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_SERVICE_SID } = process.env;
 const jwt = require("jsonwebtoken");
+const bcrypt = require('bcryptjs');
 const { Op } = require("sequelize");
 
 const twilio = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
     lazyLoading: true
 });
 
-exports.registerUser = async (req, res) => {
+exports.registerUserOTP = async (req, res) => {
     try {
         // Body Validation
-        const { error } = userRegistration(req.body);
+        const { error } = userRegistrationOTP(req.body);
         if (error) {
             return res.status(400).json({
                 success: false,
@@ -22,13 +23,16 @@ exports.registerUser = async (req, res) => {
         // Check Duplicacy
         const isUser = await Users.findOne({
             where: {
-                mobileNumber: req.body.mobileNumber
-            },
+                [Op.or]: [
+                    { mobileNumber: req.body.mobileNumber },
+                    { email: req.body.email }
+                ]
+            }
         });
         if (isUser) {
             return res.status(400).json({
                 success: false,
-                message: "User already present!"
+                message: "This credentials already exist!"
             });
         }
         // Save in DataBase
@@ -59,7 +63,7 @@ exports.registerUser = async (req, res) => {
     }
 };
 
-exports.loginUser = async (req, res) => {
+exports.loginUserOTP = async (req, res) => {
     try {
         // Body Validation
         const { error } = userLogin(req.body);
@@ -72,13 +76,13 @@ exports.loginUser = async (req, res) => {
         // find user in database
         const user = await Users.findOne({
             where: {
-                mobileNumber: req.body.mobileNumber,
-            },
+                mobileNumber: req.body.mobileNumber
+            }
         });
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid mobile number! Or No User Present with this credential!"
+                message: 'Sorry! try to login with currect credentials.'
             });
         }
         // Sending OTP to mobile number
@@ -124,7 +128,7 @@ exports.otpVerification = async (req, res) => {
         if (!user) {
             return res.status(400).send({
                 success: false,
-                message: "User is not found! First register your self!"
+                message: 'Sorry! try to login with currect credentials.'
             });
         }
         // verify OTP
@@ -164,6 +168,115 @@ exports.otpVerification = async (req, res) => {
         });
     }
 }
+
+exports.registerUserPassword = async (req, res) => {
+    try {
+        // Validate body
+        const { error } = userRegistrationPassword(req.body);
+        if (error) {
+            return res.status(400).send(error.details[0].message);
+        }
+        if (req.body.password !== req.body.confirmPassword) {
+            return res.status(400).send({
+                success: false,
+                message: "Password should be match!"
+            });
+        }
+        // Check Duplicacy
+        const isUser = await Users.findOne({
+            where: {
+                [Op.or]: [
+                    { mobileNumber: req.body.mobileNumber },
+                    { email: req.body.email }
+                ]
+            }
+        });
+        if (isUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This credentials already exist!"
+            });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const bcPassword = await bcrypt.hash(req.body.password, salt);
+        // Store in database
+        const user = await Users.create({
+            name: req.body.name,
+            email: req.body.email,
+            mobileNumber: req.body.mobileNumber,
+            password: bcPassword
+        });
+        const data = {
+            id: user.id,
+            mobileNumber: mobileNumber
+        }
+        const authToken = jwt.sign(
+            data,
+            JWT_SECRET_KEY_USER,
+            { expiresIn: JWT_VALIDITY } // five day
+        );
+        res.status(201).send({
+            success: true,
+            message: `User registered successfully!`,
+            authToken: authToken
+        });
+    }
+    catch (err) {
+        res.status(500).send({
+            success: false,
+            err: err.message
+        });
+    }
+};
+
+exports.signInUserPassword = async (req, res) => {
+    try {
+        // Validate body
+        const { error } = userSignInPassword(req.body);
+        if (error) {
+            return res.status(400).send(error.details[0].message);
+        }
+        // Check is present
+        const isUser = await Users.findOne({
+            where: {
+                email: req.body.email
+            }
+        });
+        if (!isUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'Sorry! try to login with currect credentials.'
+            });
+        }
+        const compairPassword = await bcrypt.compare(req.body.password, isUser.password);
+        if (!compairPassword) {
+            return res.status(400).send({
+                success: false,
+                message: 'Sorry! try to login with currect credentials.'
+            });
+        }
+        const data = {
+            id: isUser.id,
+            mobileNumber: isUser.mobileNumber
+        }
+        const authToken = jwt.sign(
+            data,
+            JWT_SECRET_KEY_USER,
+            { expiresIn: JWT_VALIDITY } // five day
+        );
+        res.status(201).send({
+            success: true,
+            message: `User signIn successfully!`,
+            authToken: authToken
+        });
+    }
+    catch (err) {
+        res.status(500).send({
+            success: false,
+            err: err.message
+        });
+    }
+};
 
 exports.update = async (req, res) => {
     try {

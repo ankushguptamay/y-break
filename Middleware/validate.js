@@ -43,7 +43,7 @@ exports.adminChangePassword = (data) => {
     return schema.validate(data);
 }
 
-exports.userRegistration = (data) => {
+exports.userRegistrationOTP = (data) => {
     const schema = joi.object().keys({
         name: joi.string().min(3).max(30).required(),
         email: joi.string().email().required().label('Email'),
@@ -112,5 +112,30 @@ exports.updateStep = (data) => {
         stepsArr: joi.array().required(),
         cardId: joi.string().optional()
     });
+    return schema.validate(data);
+}
+
+exports.userRegistrationPassword = (data) => {
+    const schema = joi.object().keys({
+        name: joi.string().required(),
+        email: joi.string().email().required().label('Email'),
+        password: joi.string()
+            // .regex(RegExp(pattern))
+            .required()
+            .min(8),
+        mobileNumber: joi.string().length(10).optional(),
+        confirmPassword: joi.string().required()
+    }) // .options({ allowUnknown: true });
+    return schema.validate(data);
+}
+
+exports.userSignInPassword = (data) => {
+    const schema = joi.object().keys({
+        email: joi.string().email().required().label('Email'),
+        password: joi.string()
+            // .regex(RegExp(pattern))
+            .required()
+            .min(8)
+    }) // .options({ allowUnknown: true });
     return schema.validate(data);
 }

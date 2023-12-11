@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { registerUser, loginUser, otpVerification, update, getUser } = require("../Controller/userController");
+const { registerUserOTP, loginUserOTP, otpVerification, update, getUser, registerUserPassword, signInUserPassword } = require("../Controller/userController");
 const { getAllCard, getCard } = require("../Controller/cardController");
 const { } = require("../Controller/cardController");
 const { } = require("../Controller/cardDataController");
@@ -12,8 +12,10 @@ const user = express.Router();
 const { verifyUserToken } = require('../Middleware/verifyJWT');
 const { isUserPresent } = require('../Middleware/isPresent');
 
-user.post("/register", registerUser);
-user.post("/login", loginUser);
+user.post("/register", registerUserOTP);
+user.post("/login", loginUserOTP);
+user.post("/registerByPassword", registerUserPassword);
+user.post("/loginByPassword", signInUserPassword);
 user.post("/otpVerification", otpVerification);
 user.get("/user", verifyUserToken, isUserPresent, getUser);
 user.put("/update", verifyUserToken, isUserPresent, update);
