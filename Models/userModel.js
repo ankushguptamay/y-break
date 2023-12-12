@@ -27,6 +27,9 @@ module.exports = (sequelize, DataTypes) => {
         },
         city:{
             type:DataTypes.STRING
+        },
+        password:{
+            type:DataTypes.STRING
         }
     })
     return Users;

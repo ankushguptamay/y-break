@@ -248,6 +248,7 @@ exports.signInUserPassword = async (req, res) => {
                 message: 'Sorry! try to login with currect credentials.'
             });
         }
+        console.log(isUser)
         const compairPassword = await bcrypt.compare(req.body.password, isUser.password);
         if (!compairPassword) {
             return res.status(400).send({
