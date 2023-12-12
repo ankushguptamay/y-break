@@ -22,7 +22,7 @@ db.sequelize.sync()
 
 app.use(cors(corsOptions));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json(), (req, res) => { console.log(req);console.log(req.body) });
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/icon-image', express.static('./Resources'));
