@@ -34,6 +34,9 @@ module.exports = (sequelize, DataTypes) => {
         },
         iconText: {
             type: DataTypes.STRING(1234)
+        },
+        image_url: {
+            type: DataTypes.STRING(1234)
         }
     })
     return Cards;

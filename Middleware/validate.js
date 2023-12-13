@@ -74,7 +74,8 @@ exports.createCard = (data) => {
         time: joi.string().required(),
         bgColor2: joi.string().required(),
         bgColor1: joi.string().required(),
-        iconText: joi.string().min(3).max(1000).required()
+        iconText: joi.string().min(3).max(1000).required(),
+        image_url: joi.string().optional()
     });
     return schema.validate(data);
 }
@@ -94,7 +95,8 @@ exports.updateCardData = (data) => {
         videoLink: joi.string().required(),
         overview: joi.string().required(),
         iconText: joi.string().min(3).max(1000).required(),
-        cardId: joi.string().optional()
+        cardId: joi.string().optional(),
+        image_url: joi.string().optional()
     });
     return schema.validate(data);
 }

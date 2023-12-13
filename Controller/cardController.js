@@ -21,7 +21,7 @@ exports.createCard = async (req, res) => {
                 message: error.details[0].message
             });
         }
-        const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText } = req.body;
+        const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText, image_url } = req.body;
         await Cards.create({
             titleEnglish: titleEnglish,
             time: time,
@@ -29,6 +29,7 @@ exports.createCard = async (req, res) => {
             bgColor1: bgColor1,
             bgColor2: bgColor2,
             iconText: iconText,
+            image_url: image_url,
             iconImage_OriginalName: req.file.originalname,
             iconImage_FileName: req.file.filename,
             iconImage_Path: req.file.path,
@@ -146,7 +147,7 @@ exports.updateCard = async (req, res) => {
         if (!cards) {
             return res.sendStatus(401);
         }
-        const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText } = req.body;
+        const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText, image_url } = req.body;
         let iconImage_OriginalName = cards.iconImage_OriginalName;
         let iconImage_FileName = cards.iconImage_FileName;
         let iconImage_Path = cards.iconImage_Path;
@@ -160,6 +161,7 @@ exports.updateCard = async (req, res) => {
         }
         await cards.update({
             ...cards,
+            image_url: image_url,
             titleEnglish: titleEnglish,
             time: time,
             titleHindi: titleHindi,
