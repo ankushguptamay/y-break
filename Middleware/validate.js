@@ -125,7 +125,7 @@ exports.userRegistrationPassword = (data) => {
             // .regex(RegExp(pattern))
             .required()
             .min(8),
-        mobileNumber: joi.string().length(10).optional(),
+        mobileNumber: joi.string().length(10).required(),
         confirmPassword: joi.string().required()
     }) // .options({ allowUnknown: true });
     return schema.validate(data);
