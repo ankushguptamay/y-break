@@ -57,7 +57,7 @@ exports.getCardDataById = async (req, res) => {
     try {
         const cardsData = await CardsData.findOne({
             where: {
-                cardId: req.params.id
+                id: req.params.id
             }
         });
         if(!cardsData){
@@ -89,7 +89,7 @@ exports.deleteCardData = async (req, res) => {
         if (!cardsData) {
             return res.sendStatus(401);
         }
-        await cards.destroy();
+        await cardsData.destroy();
         res.status(200).json({
             success: true,
             message: "Card data deleted successfully!"
