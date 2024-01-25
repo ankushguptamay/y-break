@@ -2,8 +2,8 @@ const express = require('express');
 
 const { registerAdmin, loginAdmin, changePassword, update, getAdmin } = require("../Controller/adminController");
 const { createCard, getAllCard, getCard, deleteCard, updateCard } = require("../Controller/cardController");
-const { createCardData, getCardData, deleteCardData, updateCardData } = require("../Controller/cardDataController");
-const { createStep, getStep, deleteStep, updateStep } = require("../Controller/stepController");
+const { createCardData, getCardData, deleteCardData, updateCardData, getCardDataById } = require("../Controller/cardDataController");
+const { createStep, getStep, deleteStep, updateStep, getStepById } = require("../Controller/stepController");
 const { getAllUser } = require("../Controller/userController");
 
 const admin = express.Router();
@@ -27,11 +27,13 @@ admin.put("/updateCard/:id", verifyAdminToken, isAdminPresent, uploadImage.singl
 
 admin.post("/createCardData", verifyAdminToken, isAdminPresent, createCardData);
 admin.get("/cardsData/:cardId", verifyAdminToken, isAdminPresent, getCardData);
+admin.get("/getCardData/:id", verifyAdminToken, isAdminPresent, getCardDataById);
 admin.delete("/deleteCardData/:id", verifyAdminToken, isAdminPresent, deleteCardData);
 admin.put("/updateCardData/:id", verifyAdminToken, isAdminPresent, updateCardData);
 
 admin.post("/createStep", verifyAdminToken, isAdminPresent, createStep);
 admin.get("/steps/:cardId", verifyAdminToken, isAdminPresent, getStep);
+admin.get("/getStep/:id", verifyAdminToken, isAdminPresent, getStepById);
 admin.delete("/deleteStep/:id", verifyAdminToken, isAdminPresent, deleteStep);
 admin.put("/updateStep/:id", verifyAdminToken, isAdminPresent, updateStep);
 

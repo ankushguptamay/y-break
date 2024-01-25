@@ -53,6 +53,32 @@ exports.getCardData = async (req, res) => {
     }
 }
 
+exports.getCardDataById = async (req, res) => {
+    try {
+        const cardsData = await CardsData.findOne({
+            where: {
+                cardId: req.params.id
+            }
+        });
+        if(!cardsData){
+            res.status(400).json({
+                success: true,
+                message: "Card data is not present!"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: "Card Data fetched successfully!",
+            data: cardsData
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
 exports.deleteCardData = async (req, res) => {
     try {
         const cardsData = await CardsData.findOne({
@@ -66,7 +92,7 @@ exports.deleteCardData = async (req, res) => {
         await cards.destroy();
         res.status(200).json({
             success: true,
-            message: "Card's data deleted successfully!"
+            message: "Card data deleted successfully!"
         });
     } catch (err) {
         res.status(500).json({

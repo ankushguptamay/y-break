@@ -51,6 +51,30 @@ exports.getStep = async (req, res) => {
     }
 }
 
+exports.getStepById = async (req, res) => {
+    try {
+        const step = await Steps.findOne({
+            where: {
+                id: req.params.id
+            }
+        });
+        if (!step) {
+            return res.sendStatus(401);
+        }
+        res.status(200).json({
+            success: true,
+            message: "Step fetched successfully!",
+            data: step
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+
 exports.deleteStep = async (req, res) => {
     try {
         const step = await Steps.findOne({
