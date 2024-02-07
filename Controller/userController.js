@@ -5,6 +5,7 @@ const { JWT_SECRET_KEY_USER, JWT_VALIDITY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const { Op } = require("sequelize");
+const { sendOTP } = require('../Util/sendOTPToMobileNumber');
 
 const twilio = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
     lazyLoading: true
@@ -13,32 +14,36 @@ const twilio = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
 exports.registerUserOTP = async (req, res) => {
     try {
         // Body Validation
-        const { error } = userRegistrationOTP(req.body);
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
-        }
+        // const { error } = userRegistrationOTP(req.body);
+        // if (error) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: error.details[0].message
+        //     });
+        // }
         // Check Duplicacy
-        const isUser = await Users.findOne({
-            where: {
-                [Op.or]: [
-                    { mobileNumber: req.body.mobileNumber },
-                    { email: req.body.email }
-                ]
-            }
-        });
-        if (isUser) {
-            return res.status(400).json({
-                success: false,
-                message: "This credentials already exist!"
-            });
-        }
-        // Save in DataBase
-        await Users.create({
-            ...req.body
-        });
+        // const isUser = await Users.findOne({
+        //     where: {
+        //         [Op.or]: [
+        //             { mobileNumber: req.body.mobileNumber },
+        //             { email: req.body.email }
+        //         ]
+        //     }
+        // });
+        // if (isUser) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "This credentials already exist!"
+        //     });
+        // }
+        // // Save in DataBase
+        // await Users.create({
+        //     ...req.body
+        // });
+        console.log(req.body.mobileNumber);
+        const response = await sendOTP(req.body.mobileNumber, "238689");
+        console.log(response.data);
+        return res.send(response.data);
         // Sending OTP to mobile number
         const countryCode = "+91";
         await twilio.verify.v2
