@@ -41,10 +41,7 @@ exports.registerUserOTP = async (req, res) => {
         // Generate OTP for Email
         const otp = generateOTP.generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
         // Sending OTP to mobile number
-        const response = await sendOTP(req.body.mobileNumber, otp);
-        console.log(otp);
-        console.log(response.data);
-        // return res.send(response.data);
+        await sendOTP(req.body.mobileNumber, otp);
         // Store OTP
         await UserOTP.create({
             validTill: new Date().getTime() + parseInt(OTP_VALIDITY),
@@ -92,10 +89,7 @@ exports.loginUserOTP = async (req, res) => {
         // Generate OTP for Email
         const otp = generateOTP.generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
         // Sending OTP to mobile number
-        const response = await sendOTP(req.body.mobileNumber, otp);
-        console.log(otp);
-        console.log(response.data);
-        // return res.send(response.data);
+        await sendOTP(req.body.mobileNumber, otp);
         // Store OTP
         await UserOTP.create({
             validTill: new Date().getTime() + parseInt(OTP_VALIDITY),
@@ -265,7 +259,6 @@ exports.signInUserPassword = async (req, res) => {
                 message: 'Sorry! try to login with currect credentials.'
             });
         }
-        console.log(isUser)
         const compairPassword = await bcrypt.compare(req.body.password, isUser.password);
         if (!compairPassword) {
             return res.status(400).send({
