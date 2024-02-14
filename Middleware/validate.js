@@ -70,7 +70,7 @@ exports.otpVerification = (data) => {
 exports.createCard = (data) => {
     const schema = joi.object().keys({
         titleEnglish: joi.string().min(3).max(100).required(),
-        titleHindi: joi.string().min(3).max(100).required(),
+        titleHindi: joi.string().min(3).max(100).optional(),
         time: joi.string().required(),
         bgColor2: joi.string().required(),
         bgColor1: joi.string().required(),
