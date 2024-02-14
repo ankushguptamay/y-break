@@ -1,6 +1,8 @@
 const db = require('../Models');
 const { createCard } = require("../Middleware/validate");
-const { deleteSingleFile } = require("../Util/deleteFile")
+const { deleteSingleFile } = require("../Util/deleteFile");
+const fs = require('fs');
+const { s3UploadObject, s3DeleteObject } = require("../Util/fileToS3")
 const Cards = db.card;
 const CardsData = db.cardsData;
 const Step = db.step;
@@ -22,6 +24,11 @@ exports.createCard = async (req, res) => {
             });
         }
         const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText, image_url } = req.body;
+        const imagePath = `./Resources/${req.file.filename}`
+        const fileContent = fs.readFileSync(imagePath);
+        const response = await s3UploadObject(req.file.filename, fileContent);
+        deleteSingleFile(req.file.path);
+        const fileAWSPath = response.Location;
         await Cards.create({
             titleEnglish: titleEnglish,
             time: time,
@@ -32,7 +39,7 @@ exports.createCard = async (req, res) => {
             image_url: image_url,
             iconImage_OriginalName: req.file.originalname,
             iconImage_FileName: req.file.filename,
-            iconImage_Path: req.file.path,
+            iconImage_Path: fileAWSPath,
             adminId: req.admin.id
         });
         res.status(200).json({
@@ -101,6 +108,7 @@ exports.getCard = async (req, res) => {
     }
 }
 
+// Cascade Delete is on cardsData and step will also delete
 exports.deleteCard = async (req, res) => {
     try {
         const cards = await Cards.findOne({
@@ -111,8 +119,8 @@ exports.deleteCard = async (req, res) => {
         if (!cards) {
             return res.sendStatus(401);
         }
-        if (cards.iconImage_Path) {
-            deleteSingleFile(cards.iconImage_Path);
+        if (cards.iconImage_FileName) {
+            await s3DeleteObject(cards.iconImage_FileName);
         }
         await cards.destroy();
         res.status(200).json({
@@ -148,16 +156,22 @@ exports.updateCard = async (req, res) => {
             return res.sendStatus(401);
         }
         const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText, image_url } = req.body;
+        const previousImage = cards.iconImage_FileName;
         let iconImage_OriginalName = cards.iconImage_OriginalName;
         let iconImage_FileName = cards.iconImage_FileName;
         let iconImage_Path = cards.iconImage_Path;
         if (req.file) {
-            if (cards.iconImage_Path) {
-                deleteSingleFile(cards.iconImage_Path);
-            }
+            const imagePath = `./Resources/${req.file.filename}`
+            const fileContent = fs.readFileSync(imagePath);
+            const response = await s3UploadObject(req.file.filename, fileContent);
+            deleteSingleFile(req.file.path);
+            const fileAWSPath = response.Location;
             iconImage_OriginalName = req.file.originalname;
             iconImage_FileName = req.file.filename;
-            iconImage_Path = req.file.path;
+            iconImage_Path = fileAWSPath;
+            if (previousImage) {
+                await s3DeleteObject(previousImage);
+            }
         }
         await cards.update({
             ...cards,
