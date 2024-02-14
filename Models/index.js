@@ -23,6 +23,7 @@ db.card = require('./cardController.js')(sequelize, Sequelize);
 db.cardsData = require('./cardsdataModel.js')(sequelize, Sequelize);
 db.step = require('./stepsModel.js')(sequelize, Sequelize);
 db.user = require('./userModel.js')(sequelize, Sequelize);
+db.userOTP = require('./userOTPModel.js')(sequelize, Sequelize);
 
 db.admin.hasMany(db.card, { foreignKey: "adminId", as: "cards" });
 db.card.belongsTo(db.admin, { foreignKey: "adminId", as: "admin" });

@@ -1,58 +1,56 @@
 const db = require('../Models');
 const Users = db.user;
+const UserOTP = db.userOTP;
 const { otpVerification, userLogin, userRegistrationOTP, userRegistrationPassword, userSignInPassword } = require("../Middleware/validate");
-const { JWT_SECRET_KEY_USER, JWT_VALIDITY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_SERVICE_SID } = process.env;
+const { JWT_SECRET_KEY_USER, JWT_VALIDITY, OTP_DIGITS_LENGTH, OTP_VALIDITY } = process.env;
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const { Op } = require("sequelize");
+const generateOTP = require('../Util/generateOTP');
 const { sendOTP } = require('../Util/sendOTPToMobileNumber');
-
-const twilio = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
-    lazyLoading: true
-});
 
 exports.registerUserOTP = async (req, res) => {
     try {
         // Body Validation
-        // const { error } = userRegistrationOTP(req.body);
-        // if (error) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: error.details[0].message
-        //     });
-        // }
-        // Check Duplicacy
-        // const isUser = await Users.findOne({
-        //     where: {
-        //         [Op.or]: [
-        //             { mobileNumber: req.body.mobileNumber },
-        //             { email: req.body.email }
-        //         ]
-        //     }
-        // });
-        // if (isUser) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: "This credentials already exist!"
-        //     });
-        // }
-        // // Save in DataBase
-        // await Users.create({
-        //     ...req.body
-        // });
-        console.log(req.body.mobileNumber);
-        const response = await sendOTP(req.body.mobileNumber, "238689");
-        console.log(response.data);
-        return res.send(response.data);
-        // Sending OTP to mobile number
-        const countryCode = "+91";
-        await twilio.verify.v2
-            .services(TWILIO_SERVICE_SID)
-            .verifications
-            .create({
-                to: `${countryCode}${req.body.mobileNumber}`,
-                channel: 'sms'
+        const { error } = userRegistrationOTP(req.body);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
             });
+        }
+        // Check Duplicacy
+        const isUser = await Users.findOne({
+            where: {
+                [Op.or]: [
+                    { mobileNumber: req.body.mobileNumber },
+                    { email: req.body.email }
+                ]
+            }
+        });
+        if (isUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This credentials already exist!"
+            });
+        }
+        // Save in DataBase
+        const user = await Users.create({
+            ...req.body
+        });
+        // Generate OTP for Email
+        const otp = generateOTP.generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
+        // Sending OTP to mobile number
+        const response = await sendOTP(req.body.mobileNumber, otp);
+        console.log(otp);
+        console.log(response.data);
+        // return res.send(response.data);
+        // Store OTP
+        await UserOTP.create({
+            validTill: new Date().getTime() + parseInt(OTP_VALIDITY),
+            otp: otp,
+            userId: user.id
+        });
         res.status(200).json({
             success: true,
             message: `Register successfully! OTP send to ${req.body.mobileNumber}!`,
@@ -91,14 +89,19 @@ exports.loginUserOTP = async (req, res) => {
             });
         }
         // Sending OTP to mobile number
-        const countryCode = "+91";
-        await twilio.verify.v2
-            .services(TWILIO_SERVICE_SID)
-            .verifications
-            .create({
-                to: `${countryCode}${req.body.mobileNumber}`,
-                channel: 'sms'
-            });
+        // Generate OTP for Email
+        const otp = generateOTP.generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
+        // Sending OTP to mobile number
+        const response = await sendOTP(req.body.mobileNumber, otp);
+        console.log(otp);
+        console.log(response.data);
+        // return res.send(response.data);
+        // Store OTP
+        await UserOTP.create({
+            validTill: new Date().getTime() + parseInt(OTP_VALIDITY),
+            otp: otp,
+            userId: user.id
+        });
         res.status(200).json({
             success: true,
             message: `OTP send to ${req.body.mobileNumber}!`,
@@ -123,49 +126,57 @@ exports.otpVerification = async (req, res) => {
             return res.status(400).send(error.details[0].message);
         }
         const { mobileNumber, mobileOTP } = req.body;
-        const countryCode = "+91";
-        // Checking user present or not
+        // Is Mobile Otp exist
+        const isOtp = await UserOTP.findOne({
+            where: {
+                otp: mobileOTP
+            }
+        });
+        if (!isOtp) {
+            return res.status(400).send({
+                success: false,
+                message: `Invalid OTP!`
+            });
+        }
+        // Checking is user present or not
         const user = await Users.findOne({
             where: {
-                mobileNumber: mobileNumber
+                [Op.and]: [
+                    { mobileNumber: mobileNumber }, { id: isOtp.userId }
+                ]
             }
         });
         if (!user) {
             return res.status(400).send({
                 success: false,
-                message: 'Sorry! try to login with currect credentials.'
+                message: "No Details Found. Register Now!"
             });
         }
-        // verify OTP
-        const respond = await twilio.verify.v2
-            .services(TWILIO_SERVICE_SID)
-            .verificationChecks
-            .create({
-                to: `${countryCode}${mobileNumber}`,
-                code: mobileOTP
-            });
-        if (respond.valid === true) {
-            // generating auth Token
-            const data = {
-                id: user.id,
-                mobileNumber: mobileNumber
-            }
-            const authToken = jwt.sign(
-                data,
-                JWT_SECRET_KEY_USER,
-                { expiresIn: JWT_VALIDITY } // five day
-            );
-            res.status(200).send({
-                success: true,
-                message: `OTP verified successfully!`,
-                authToken: authToken
-            });
-        } else {
-            res.status(400).send({
+        // is email otp expired?
+        const isOtpExpired = new Date().getTime() > parseInt(isOtp.validTill);
+        if (isOtpExpired) {
+            await UserOTP.destroy({ where: { userId: isOtp.userId } });
+            return res.status(400).send({
                 success: false,
-                message: 'Wrong OTP!'
-            })
+                message: `OTP expired!`
+            });
         }
+        await UserOTP.destroy({ where: { userId: isOtp.userId } });
+        const data = {
+            id: user.id,
+            mobileNumber: user.mobileNumber
+        }
+        const authToken = jwt.sign(
+            data,
+            JWT_SECRET_KEY_USER,
+            { expiresIn: JWT_VALIDITY } // five day
+        );
+        res.status(201).send({
+            success: true,
+            message: `OTP verify successfully!`,
+            data: user,
+            authToken: authToken
+        });
     } catch (err) {
         res.status(500).send({
             success: false,
@@ -223,6 +234,7 @@ exports.registerUserPassword = async (req, res) => {
         res.status(201).send({
             success: true,
             message: `User registered successfully!`,
+            data: user,
             authToken: authToken
         });
     }
@@ -273,6 +285,7 @@ exports.signInUserPassword = async (req, res) => {
         res.status(201).send({
             success: true,
             message: `User signIn successfully!`,
+            data: isUser,
             authToken: authToken
         });
     }
