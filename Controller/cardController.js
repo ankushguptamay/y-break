@@ -1,7 +1,6 @@
 const db = require('../Models');
 const { createCard } = require("../Middleware/validate");
 const { deleteSingleFile } = require("../Util/deleteFile");
-const fs = require('fs');
 const Cards = db.card;
 const CardsData = db.cardsData;
 const Step = db.step;

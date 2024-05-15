@@ -34,7 +34,7 @@ db.cardsData.belongsTo(db.card, { foreignKey: "cardId", as: "cards", onDelete: "
 db.card.hasMany(db.step, { foreignKey: "cardId", as: "steps", onDelete: "CASCADE" });
 db.step.belongsTo(db.card, { foreignKey: "cardId", as: "cards", onDelete: "CASCADE" });
 
-queryInterface.addColumn("cards", "cloudinaryFileId", { type: DataTypes.STRING }).then((res) => { console.log("cloudinaryFileId Added!") }).catch((err) => { console.log(err) });
+// queryInterface.addColumn("cards", "cloudinaryFileId", { type: DataTypes.STRING }).then((res) => { console.log("cloudinaryFileId Added!") }).catch((err) => { console.log(err) });
 // queryInterface.changeColumn("users", "email", { type: DataTypes.STRING}).then((res) => { console.log(res) }).catch((err) => { console.log(err) });
 
 module.exports = db;
