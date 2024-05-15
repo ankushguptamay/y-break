@@ -2,10 +2,17 @@ const db = require('../Models');
 const { createCard } = require("../Middleware/validate");
 const { deleteSingleFile } = require("../Util/deleteFile");
 const fs = require('fs');
-const { s3UploadObject, s3DeleteObject } = require("../Util/fileToS3")
 const Cards = db.card;
 const CardsData = db.cardsData;
 const Step = db.step;
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 
 exports.createCard = async (req, res) => {
     try {
@@ -24,12 +31,13 @@ exports.createCard = async (req, res) => {
             });
         }
         const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText, image_url } = req.body;
-        const imagePath = `./Resources/${req.file.filename}`
-        const fileContent = fs.readFileSync(imagePath);
-        const response = await s3UploadObject(req.file.filename, fileContent);
+        const imagePath = `./Resources/${req.file.filename}`;
+        const response = await cloudinary.uploader.upload(imagePath);
+        // delete file from resource/servere
         deleteSingleFile(req.file.path);
-        const fileAWSPath = response.Location;
+
         await Cards.create({
+            cloudinaryFileId: response.public_id,
             titleEnglish: titleEnglish,
             time: time,
             titleHindi: titleHindi,
@@ -39,7 +47,7 @@ exports.createCard = async (req, res) => {
             image_url: image_url,
             iconImage_OriginalName: req.file.originalname,
             iconImage_FileName: req.file.filename,
-            iconImage_Path: fileAWSPath,
+            iconImage_Path: response.secure_url,
             adminId: req.admin.id
         });
         res.status(200).json({
@@ -156,25 +164,25 @@ exports.updateCard = async (req, res) => {
             return res.sendStatus(401);
         }
         const { titleEnglish, titleHindi, time, bgColor1, bgColor2, iconText, image_url } = req.body;
-        const previousImage = cards.iconImage_FileName;
         let iconImage_OriginalName = cards.iconImage_OriginalName;
         let iconImage_FileName = cards.iconImage_FileName;
         let iconImage_Path = cards.iconImage_Path;
+        let cloudinaryFileId = cards.cloudinaryFileId;
         if (req.file) {
             const imagePath = `./Resources/${req.file.filename}`
-            const fileContent = fs.readFileSync(imagePath);
-            const response = await s3UploadObject(req.file.filename, fileContent);
+            const response = await cloudinary.uploader.upload(imagePath);
             deleteSingleFile(req.file.path);
-            const fileAWSPath = response.Location;
+            if (cards.cloudinaryFileId) {
+                await cloudinary.uploader.destroy(cards.cloudinaryFileId);
+            }
             iconImage_OriginalName = req.file.originalname;
             iconImage_FileName = req.file.filename;
-            iconImage_Path = fileAWSPath;
-            if (previousImage) {
-                await s3DeleteObject(previousImage);
-            }
+            iconImage_Path = response.secure_url;
+            cloudinaryFileId = response.public_id;
         }
         await cards.update({
             ...cards,
+            cloudinaryFileId: cloudinaryFileId,
             image_url: image_url,
             titleEnglish: titleEnglish,
             time: time,

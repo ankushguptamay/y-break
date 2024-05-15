@@ -20,11 +20,14 @@ module.exports = (sequelize, DataTypes) => {
         iconImage_OriginalName: {
             type: DataTypes.STRING(1234)
         },
+        cloudinaryFileId: {
+            type: DataTypes.STRING
+        },
         time: {
             type: DataTypes.STRING
         },
-        video:{
-            type:DataTypes.STRING(1234)
+        video: {
+            type: DataTypes.STRING(1234)
         },
         bgColor1: {
             type: DataTypes.STRING
