@@ -126,8 +126,8 @@ exports.deleteCard = async (req, res) => {
         if (!cards) {
             return res.sendStatus(401);
         }
-        if (cards.iconImage_FileName) {
-            await s3DeleteObject(cards.iconImage_FileName);
+        if (cards.cloudinaryFileId) {
+            await cloudinary.uploader.destroy(cards.cloudinaryFileId);
         }
         await cards.destroy();
         res.status(200).json({
