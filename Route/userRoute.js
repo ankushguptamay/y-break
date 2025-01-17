@@ -1,16 +1,24 @@
-const express = require('express');
+const express = require("express");
 
-const { registerUserOTP, loginUserOTP, otpVerification, update, getUser, registerUserPassword, signInUserPassword } = require("../Controller/userController");
+const {
+  registerUserOTP,
+  loginUserOTP,
+  otpVerification,
+  update,
+  getUser,
+  registerUserPassword,
+  signInUserPassword,
+} = require("../Controller/userController");
 const { getAllCard, getCard } = require("../Controller/cardController");
-const { } = require("../Controller/cardController");
-const { } = require("../Controller/cardDataController");
-const { } = require("../Controller/stepController");
+const {} = require("../Controller/cardController");
+const {} = require("../Controller/cardDataController");
+const {} = require("../Controller/stepController");
 
 const user = express.Router();
 
 // Middleware
-const { verifyUserToken } = require('../Middleware/verifyJWT');
-const { isUserPresent } = require('../Middleware/isPresent');
+const { verifyUserToken } = require("../Middleware/verifyJWT");
+const { isUserPresent } = require("../Middleware/isPresent");
 
 user.post("/register", registerUserOTP);
 user.post("/login", loginUserOTP);
@@ -20,7 +28,8 @@ user.post("/otpVerification", otpVerification);
 user.get("/user", verifyUserToken, isUserPresent, getUser);
 user.put("/update", verifyUserToken, isUserPresent, update);
 
-user.get("/cards", verifyUserToken, isUserPresent, getAllCard);
-user.get("/cards/:id", verifyUserToken, isUserPresent, getCard);
+// Public route
+user.get("/cards", getAllCard);
+user.get("/cards/:id", getCard);
 
 module.exports = user;
